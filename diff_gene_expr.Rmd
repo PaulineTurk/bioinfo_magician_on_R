@@ -13,11 +13,11 @@ output: html_document
 
 # 0. load libraries
 ```{r install libraries}
-if (!require("BiocManager", quietly = TRUE))
-    install.packages("BiocManager")
+#if (!require("BiocManager", quietly = TRUE))
+#    install.packages("BiocManager")
 
-BiocManager::install("DESeq2")
-BiocManager::install("airway")
+#BiocManager::install("DESeq2")
+#BiocManager::install("airway")
 ```
 
 ```{r load libraries}
