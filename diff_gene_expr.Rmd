@@ -1,0 +1,92 @@
+---
+title: "diff_gene_expr"
+author: "pauline"
+date: "`r Sys.Date()`"
+output: html_document
+---
+
+```{r general info}
+# script to perform differential gene expressoin analysis using DESeqé package
+# setwd("\~/Documents/Bioinfo/bioinformagician/R_scripts/bioinfo_magician_on_R")
+```
+
+
+# 0. load libraries
+```{r install libraries}
+if (!require("BiocManager", quietly = TRUE))
+    install.packages("BiocManager")
+
+BiocManager::install("DESeq2")
+BiocManager::install("airway")
+```
+
+```{r load libraries}
+library(DESeq2)
+library(airway)  # import data to study
+library(tidyverse)
+```
+
+# 1. load data + checkings
+```{r read count_data.csv}
+counts_data = read.csv("counts_data.csv", row.names = 1)
+```
+```{r read sample_info.csv}
+colData = read.csv("sample_info.csv", row.names = 1)
+```
+```{r check rows and columns are the same}
+all(colnames(counts_data) %in% rownames(colData))
+```
+```{r check rows and columns are in the same order}
+all(colnames(counts_data) == rownames(colData))
+```
+
+# 2. Construct DESeqDataSet object
+```{r DESeqDataSet: dds}
+dds = DESeqDataSetFromMatrix(countData = counts_data,
+                       colData = colData,
+                       design = ~dexamethasone)   # design factor
+dds
+```
+# 3. Pre-processing (recommanded)
+```{r pre-filtering}
+# removing rows with low gene counts keeping rows that have at least 10 read total
+keep = rowSums(counts(dds)) >= 10  # TRUE/FALSE
+dds = dds[keep,]  # only keep rows that are TRUE
+```
+
+# 4. set a factor level
+```{r treated vs untreated}
+dds$dexamethasone = relevel(dds$dexamethasone, ref = "untreated")  # to avoid default alphabetic selection of the ref level
+# dds$dexamethasone
+```
+
+# 5. RUn DESeq2
+```{r DESeq}
+dds = DESeq(dds)
+```
+```{r get the results}
+res = results(dds)
+res
+```
+
+*NOTE*: collapse technical replicates, but never biological replicates
+
+# 6.Explore Results
+```{r general + change p-adjusted threshold}
+summary(res)
+
+res_0.01 = results(dds, alpha = 0.01) # alpha = p-adjusted
+summary(res_0.01)
+```
+```{r contrasts}
+# in case we have more than 2 levels to pairwise compare
+# e.g: treated_4hrs, treated_8hrs, untreated
+#resultsNames(dds, contrast = c("dexamethasone", "treated_4hrs", "untreated")) # in contrast: design_factor, level_1, level_2
+```
+
+
+# 7. Data visualisation
+```{r}
+plotMA(res)
+```
+
